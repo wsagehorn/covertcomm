@@ -5,19 +5,33 @@ from PIL import Image
 from itertools import chain
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
+def get_arg_parser():
+    parser = argparse.ArgumentParser(
+        description='Steganographically embed or \
+        extract information using vessel image files.'
+    )
 
     general_options = parser.add_argument_group("General Options")
-    general_options.add_argument("-e", "--extract", dest="is_extract", action="store_true", default=False, help="Extract data from a vessel image")
+    general_options.add_argument(
+        "-e", "--extract", dest="is_extract",
+        action="store_true", default=False,
+        help="Extract data from a vessel image"
+    )
 
     io_options = parser.add_argument_group("I/O Options")
     io_options.add_argument('vessel_image')
-    io_options.add_argument("-i", "--input", dest="input_file", help="File to embed into the image")
-    io_options.add_argument("-o", "--output", dest="output_file", help="File to output to. If left blank, \
-    overwrite or save to <inputimage>.uvsl for embedding and extracting, respectively")
+    io_options.add_argument(
+        "-i", "--input", dest="input_file",
+        help="File to embed into the image"
+    )
+    io_options.add_argument(
+        "-o", "--output", dest="output_file",
+        help="File to output to. If left blank, \
+        overwrite or save to <inputimage>.uvsl for \
+        embedding and extracting, respectively"
+    )
 
-    return parser.parse_args()
+    return parser
 
 
 
@@ -81,7 +95,7 @@ def build_from_bits(size_of_target, source):
 
 
 def main():
-    args = get_args()
+    args = get_arg_parser().parse_args()
 
     vessel_image_path = args.vessel_image
     vessel_image = Image.open(vessel_image_path)
