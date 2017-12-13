@@ -94,9 +94,7 @@ def build_from_bits(size_of_target, source):
     return target
 
 
-def main():
-    args = get_arg_parser().parse_args()
-
+def steg(args):
     vessel_image_path = args.vessel_image
     vessel_image = Image.open(vessel_image_path)
 
@@ -142,6 +140,9 @@ def main():
                 os.remove(output_file_path)
 
 
+def main():
+    args = get_arg_parser().parse_args()
+    steg(args)
 
 if __name__ == '__main__':
     main()
