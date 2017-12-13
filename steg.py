@@ -21,14 +21,14 @@ def get_args():
 
 
 
-def embed(vessel_image_path, input_file_path):
+def embed(vessel_image, input_file):
 
     # create a 1-bit-at-a-time generator for the size of the input
-    size_in_bytes = (os.path.getsize(input_file_path)).to_bytes(8, "big")
+    size_in_bytes = (os.path.getsize(input_file.name)).to_bytes(8, "big")
     size_generator = get_bits(bytearray(size_in_bytes))
 
     # do the same for the input itself
-    input_generator = get_bits_from_file(input_file_path)
+    input_generator = get_bits_from_file(input_file)
 
     #chain them together
     bits = chain(size_generator, input_generator)
@@ -38,7 +38,6 @@ def embed(vessel_image_path, input_file_path):
     #   when it has the full file and stop extracting.
     # - The rest is the data of the input file itself.
 
-    vessel_image = Image.open(vessel_image_path)
     vessel_bytes = bytearray(vessel_image.tobytes())
     for i, byte in enumerate(vessel_bytes):
         try:
@@ -46,8 +45,7 @@ def embed(vessel_image_path, input_file_path):
         except StopIteration:
             return Image.frombytes(vessel_image.mode, vessel_image.size, bytes(vessel_bytes))
 
-def extract(vessel_image_path):
-    vessel_image = Image.open(vessel_image_path)
+def extract(vessel_image):
     vessel_bytes = vessel_image.tobytes()
 
     # retreive the size of the input file from the first 8 bytes
@@ -68,9 +66,9 @@ def get_bits(ba):
             yield (byte & 2**i) >> i
 
 # yields 1 bit at a time from a file
-def get_bits_from_file(input_file_path):
-    with open(input_file_path, "rb") as input_file:
-        return get_bits(bytearray(input_file.read()))
+def get_bits_from_file(input_file):
+    assert input_file.mode == "rb", "file must be opened in mode rb"
+    return get_bits(bytearray(input_file.read()))
 
 # constructs target from the last bit from each byte in source
 def build_from_bits(size_of_target, source):
@@ -88,6 +86,7 @@ def main():
     vessel_image_path = args.vessel_image
     vessel_image = Image.open(vessel_image_path)
 
+    ### Embedding ###
     if not args.is_extract:
         if not args.input_file:
             print("Error: No input file provided.")
@@ -108,7 +107,8 @@ def main():
             print("vessel size: " + str(int(vessel_size / 8)))
             quit()
 
-        img = embed(vessel_image_path, input_file_path)
+        with open(input_file_path, "rb") as input_file:
+            img = embed(vessel_image, input_file)
         output_file_path = args.output_file if args.output_file else vessel_image_path
         #JPEG must be saved as BMP, otherwise it will be scrambled by compression
         f = vessel_image.format if vessel_image.format != "JPEG" else "BMP"
@@ -117,11 +117,12 @@ def main():
         except Exception as e:
             print(e)
 
+    ### Extracting ###
     else:
         output_file_path = args.output_file if args.output_file else vessel_image_path + ".uvsl"
         with open(output_file_path, "wb") as output_file:
             try:
-                output_file.write(extract(vessel_image_path))
+                output_file.write(extract(vessel_image))
             except Exception as e:
                 print(e)
                 os.remove(output_file_path)
