@@ -25,6 +25,8 @@ JPG_OUT = "tests/data/out.jpg"
 BMP_FILE = "tests/data/image.bmp"
 BMP_OUT = "tests/data/out.bmp"
 
+TMP_FILES = [TXT_OUT, PNG_OUT, JPG_OUT, BMP_OUT]
+
 class CommandLineTestCase(TestCase):
 
     @classmethod
@@ -33,27 +35,38 @@ class CommandLineTestCase(TestCase):
         cls.parser = parser
 
 
-class PNGTestCase(CommandLineTestCase):
+class ImageTestCase(CommandLineTestCase):
 
     def tearDown(self):
-        clean(PNG_OUT)
-        clean(TXT_OUT)
+        clean(*TMP_FILES)
 
     def test_with_empty_args(self):
         with self.assertRaises(SystemExit):
             self.parser.parse_args([])
 
-    def test_PNG(self):
+    def CLI_embed(self, img, data, out):
         args = self.parser.parse_args(
-            [PNG_FILE, "-i", TXT_FILE, "-o", PNG_OUT]
+            [img, "-i", data, "-o", out]
         )
-
         steg(args)
 
+    def CLI_extract(self, img, out):
         args = self.parser.parse_args(
-            [PNG_OUT, "-e", "-o", TXT_OUT]
+            [img, "-e", "-o", out]
         )
-
         steg(args)
 
+    def image_helper(self, in_file, out_file):
+        self.CLI_embed(in_file, TXT_FILE, out_file)
+        self.assertTrue(os.path.exists(out_file))
+        self.CLI_extract(out_file, TXT_OUT)
         self.assertTrue(filecmp.cmp(TXT_FILE, TXT_OUT))
+
+    def test_PNG(self):
+        self.image_helper(PNG_FILE, PNG_OUT)
+
+    def test_JPG(self):
+        self.image_helper(JPG_FILE, JPG_OUT)
+
+    def test_BMP(self):
+        self.image_helper(BMP_FILE, BMP_OUT)
